@@ -10,11 +10,12 @@ A comprehensive AI-powered system for predicting, identifying, and managing aban
 ## 🚀 Features
 
 - **Geospatial Prediction Engine**: Identifying high-risk properties using tax, crime, and utility data.
-- **Multi-Source Imagery**: Integration with Sentinel-2 satellite data and Mapillary street view.
-- **Computer Vision Analysis**: Automated change detection (SSIM) and abandonment indicators (vegetation, boarding).
+- **Remote Sensing Pipeline**: Advanced cloud masking, mosaic normalization, and vegetation canopy analysis (adapted from USFS research).
+- **Multi-Source Imagery**: Integration with Sentinel-2 satellite data, Mapillary street view, and commercial imagery support (Planet Dove).
+- **Computer Vision Analysis**: Automated change detection (SSIM) and abandonment indicators.
 - **Interactive React Frontend**: Leaflet mapping, filtering, and administration dashboard.
 - **Robust Backend**: FastAPI with async SQLAlchemy, PostGIS, and advanced security (JWT, Rate Limiting).
-- **Enterprise-Ready**: Dockerized deployment, CI/CD pipelines, and comprehensive testing.
+- **Enterprise-Ready**: Dockerized deployment, CI/CD pipelines, and comprehensive ops tooling (Setup Wizard, Makefile).
 
 ## 🏗️ Architecture
 
@@ -22,7 +23,7 @@ The system is built as a modular application:
 
 - **Backend**: `backend/` - Python FastAPI application
   - **API**: RESTful endpoints for locations, predictions, and admin tasks.
-  - **ML Pipeline**: Scikit-learn random forests and custom heuristic models.
+  - **ML Pipeline**: Random forests, remote sensing modules (masking, normalization), and heuristic models.
   - **Database**: PostgreSQL + PostGIS for spatial data.
 - **Frontend**: `frontend/` - React SPA (Vite/CRA)
   - **UI**: Tailwind CSS + Headless UI.
@@ -30,26 +31,38 @@ The system is built as a modular application:
 
 ## 🏃 Quick Start
 
-### Using Docker (Recommended)
+### 1. Automated Setup (Recommended)
+
+We provide a wizard to handle prerequisites, configuration, and deployment.
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/jameshodlen/alibandoned-homes.git
 cd alibandoned-homes
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your secrets (or leave defaults for dev)
-
-# 3. Launch stack
-docker-compose up -d --build
-
-# 4. Access App
-# Frontend: http://localhost:3000
-# API Docs: http://localhost:8000/docs
+# 2. Run the Setup Wizard
+# This generates secrets, checks Docker dependencies, and launches the app.
+make setup
+# OR
+python scripts/setup_wizard.py
 ```
 
-### Manual Development Setup
+### 2. Manual Access
+
+- **Frontend**: http://localhost:3000
+- **API Docs**: http://localhost:8000/docs
+- **User Manual**: [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
+
+### 3. Common Commands (Makefile)
+
+```bash
+make up      # Start services
+make down    # Stop services
+make logs    # View logs
+make update  # Pull and rebuild
+```
+
+### Manual Development Setup (Legacy)
 
 See detailed guides:
 
@@ -60,6 +73,7 @@ See detailed guides:
 
 We believe in extensive documentation. Check out our guides:
 
+- **[User Manual](docs/USER_MANUAL.md)**: Daily usage guide for administrators.
 - **[API Guide](docs/API_GUIDE.md)**: Full API reference and authentication details.
 - **[Advanced Features](docs/ADVANCED_FEATURES.md)**: Guide to imagery analysis and privacy-safe exports.
 - **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)**: Production setup with Docker and security hardening.
