@@ -26,6 +26,7 @@ from backend.ml_pipeline.feature_validator import FeatureValidator
 from backend.ml_pipeline.extractors.census_extractor import CensusExtractor
 from backend.ml_pipeline.extractors.osm_extractor import OSMExtractor
 from backend.ml_pipeline.extractors.satellite_extractor import SatelliteExtractor
+from backend.ml_pipeline.filters.canopy_mask import CanopyMask
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +47,7 @@ class FeatureEngineering:
             port=int(os.getenv("REDIS_PORT", 6379))
         )
         self.validator = FeatureValidator()
+        self.canopy_mask = CanopyMask()
         
         # 2. Extractors
         try:
@@ -77,7 +79,10 @@ class FeatureEngineering:
             'building_count_200m',
             
             # Satellite
-            'ndvi_mean', 'ndbi_mean', 'cloud_coverage'
+            'ndvi_mean', 'ndbi_mean', 'cloud_coverage',
+            
+            # Derived / Filters
+            'vegetation_class', 'canopy_abandonment_score_adj'
         ]
 
     def extract_features_for_location(
@@ -131,12 +136,35 @@ class FeatureEngineering:
         # C. Satellite Data
         sat_data = self.satellite.extract_features(latitude, longitude, radius_meters)
         
+        # D. Canopy Mask (Vegetation Classification)
+        # We need neighborhood stats first, but for now we'll mock them or use what we have.
+        # Ideally, we'd fetch neighborhood NDVI stats. 
+        # Here we just pass a placeholder or derived stats.
+        neighborhood_stats = {
+            'mean_ndvi': sat_data.get('ndvi_mean', 0.4), # Self-referential fallback for now
+            'std_ndvi': 0.1
+        }
+        
+        veg_class = self.canopy_mask.classify_vegetation(
+            sat_data.get('ndvi_mean', 0.0) or 0.0, 
+            neighborhood_stats
+        )
+        
+        # Adjust a theoretical base score (e.g. 0.5) to see effect
+        score_adj = self.canopy_mask.adjust_abandonment_score(1.0, veg_class)
+        
+        filter_data = {
+            'vegetation_class': veg_class,
+            'canopy_abandonment_score_adj': score_adj
+        }
+
         # 3. Aggregate
         # ------------
         features = {
             **census_data,
             **osm_data,
-            **sat_data
+            **sat_data,
+            **filter_data
         }
         
         # 4. Validate & Impute

@@ -9,13 +9,12 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ScaleControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
 
 // Fix Leaflet icon issue in React
-// Comment: "Webpack breaks Leaflet's default icon paths, must fix manually"
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -27,6 +26,33 @@ let DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
+
+// Placeholder sub-components ... (moved/retained)
+const LayerSelector = ({ layers, selected, onChange }) => (
+  <div className="absolute top-4 right-4 bg-white p-2 rounded shadow z-[1000]">
+    <select value={selected} onChange={(e) => onChange(e.target.value)}>
+      {Object.entries(layers).map(([key, layer]) => (
+        <option key={key} value={key}>{layer.name}</option>
+      ))}
+    </select>
+  </div>
+);
+
+const ControlsPanel = ({ showHeatmap, onToggleHeatmap, showClusters, onToggleClusters }) => (
+  <div className="absolute bottom-8 left-4 bg-white p-2 rounded shadow z-[1000] flex flex-col gap-2">
+    <label className="flex items-center gap-2">
+      <input type="checkbox" checked={showHeatmap} onChange={onToggleHeatmap} />
+      Show Heatmap
+    </label>
+    <label className="flex items-center gap-2">
+      <input type="checkbox" checked={showClusters} onChange={onToggleClusters} />
+      Cluster Markers
+    </label>
+  </div>
+);
+
+// Icon setup moved to top
+
 
 /**
  * MapView Component
@@ -98,6 +124,17 @@ const MapView = ({ locations = [], predictions = [], onMapClick, onLocationClick
       onMapClick({ latitude: lat, longitude: lng });
     }
   }, [onMapClick]);
+
+  /**
+   * Handle draw completion
+   * 
+   * Passed to DrawingTools to handle new shapes.
+   * Currently just logs the area, but could filter locations.
+   */
+  const handleDrawComplete = useCallback((area) => {
+      console.log('Draw complete:', area);
+      // Logic to filter locations or trigger prediction in area
+  }, []);
   
   /**
    * Custom marker icons by status

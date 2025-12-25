@@ -62,6 +62,40 @@ class SatelliteExtractor:
              logger.warning("Sentinel Hub credentials missing. Satellite features disabled.")
              self.enabled = False
 
+    def mask_clouds_and_shadows(self, bands: Dict[str, float], scl_value: int) -> Dict[str, Optional[float]]:
+        """
+        Apply cloud and shadow masking based on Sentinel-2 SCL (Scene Classification Layer).
+        
+        SCL Classes:
+        0: No Data
+        1: Saturated / Defective
+        2: Dark Area / Cast Shadow
+        3: Cloud Shadows
+        4: Vegetation
+        5: Not Vegetated
+        6: Water
+        7: Unclassified
+        8: Cloud Medium Probability
+        9: Cloud High Probability
+        10: Thin Cirrus
+        11: Snow / Ice
+        
+        Algorithm adapted from: swegmueller/Sentinel_2_and_HLS_tools
+        """
+        # Mask out: Saturated(1), Shadow(3), Water(6), Cloud(9), Snow(11)
+        # We also treat Medium Cloud(8) and Cirrus(10) as noise for abandonment detection
+        mask_values = {1, 3, 6, 8, 9, 10, 11}
+        
+        if scl_value in mask_values:
+            logger.debug(f"Pixel masked due to SCL class: {scl_value}")
+            return {
+                'ndvi_mean': None,
+                'ndbi_mean': None,
+                'cloud_coverage': 1.0 # Treat as fully obscured
+            }
+            
+        return bands
+
     def extract_features(
         self, 
         latitude: float, 
@@ -93,13 +127,13 @@ class SatelliteExtractor:
 
             # 2. Request Data
             # ---------------
-            # We request bands 4 (Red), 8 (NIR), 11 (SWIR)
+            # We request bands 4 (Red), 8 (NIR), 11 (SWIR) and SCL (Scene Classification)
             # Evalscript calculates indices on the server side to save bandwidth
             evalscript = """
             //VERSION=3
             function setup() {
               return {
-                input: ["B04", "B08", "B11", "CLM"],
+                input: ["B04", "B08", "B11", "SCL"],
                 output: { bands: 4 }
               };
             }
@@ -109,9 +143,8 @@ class SatelliteExtractor:
               let ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
               let ndbi = (sample.B11 - sample.B08) / (sample.B11 + sample.B08);
               
-              // Cloud mask (CLM): 1 if cloud, 0 if clear usually (depends on L2A/L1C)
-              // We'll just return raw values for now
-              return [ndvi, ndbi, sample.CLM, 1];
+              // SCL: Scene Classification Layer
+              return [ndvi, ndbi, sample.SCL, 1];
             }
             """
             
@@ -119,7 +152,7 @@ class SatelliteExtractor:
             # Real request would look like:
             # request = SentinelHubRequest(
             #     evalscript=evalscript,
-            #     input_data=[SentinelHubRequest.input_data(DataCollection.SENTINEL1_L2A)],
+            #     input_data=[SentinelHubRequest.input_data(DataCollection.SENTINEL2_L2A)],
             #     responses=[SentinelHubRequest.output_response('default', MimeType.TIFF)],
             #     bbox=bbox,
             #     time_interval=('2023-01-01', '2023-01-30')
@@ -127,9 +160,17 @@ class SatelliteExtractor:
             # image = request.get_data()[0]
             
             # MOCK DATA for implementation (to avoid authentication errors in test env)
-            features['ndvi_mean'] = 0.45  # Healthy vegetation
-            features['ndbi_mean'] = -0.12 # Moderate built-up
-            features['cloud_coverage'] = 0.05
+            # Simulating a clear pixel (SCL=4 Vegetation)
+            mock_bands = {'ndvi_mean': 0.45, 'ndbi_mean': -0.12, 'cloud_coverage': 0.05}
+            mock_scl = 4 
+            
+            # Apply Masking
+            masked_features = self.mask_clouds_and_shadows(mock_bands, mock_scl)
+            
+            # Parse result
+            features['ndvi_mean'] = masked_features.get('ndvi_mean')
+            features['ndbi_mean'] = masked_features.get('ndbi_mean')
+            features['cloud_coverage'] = masked_features.get('cloud_coverage', 0.05)
             
         except Exception as e:
             logger.error(f"Error fetching satellite data: {e}")

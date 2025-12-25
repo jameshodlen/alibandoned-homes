@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-# Comment: "npm ci is faster and more reliable than npm install for CI/CD"
-RUN npm ci --only=production
+RUN npm install --omit=dev
+# Comment: "Using npm install since package-lock.json might be missing"
 
 # Copy source code
 COPY . .
