@@ -1,0 +1,50 @@
+# FastAPI Backend Dependencies
+
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0  # ASGI server
+python-multipart==0.0.6  # File upload support
+
+# Database
+sqlalchemy==2.0.23  # ORM
+asyncpg==0.29.0  # Async PostgreSQL driver
+alembic==1.12.1  # Database migrations
+geoalchemy2==0.14.2  # PostGIS support
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+
+# Validation
+pydantic==2.5.0  # Data validation
+pydantic-settings==2.1.0  # Environment config
+email-validator==2.1.0  # Email validation
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0  # JWT tokens
+passlib[bcrypt]==1.7.4  # Password hashing
+python-dotenv==1.0.0  # Environment variables
+
+# Rate Limiting
+slowapi==0.1.9  # Rate limiting middleware
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2  # Async HTTP client for tests
+
+# CORS
+python-cors==1.0.0
+
+# Image Processing (for photo uploads)
+pillow==10.1.0  # Image manipulation
+pyexiv2==2.11.0  # EXIF metadata handling
+
+# Cryptography (for metadata encryption)
+cryptography==41.0.7
+
+# Utilities
+python-dateutil==2.8.2
+shapely==2.0.2  # Geometric operations
+
+# Advanced Features dependencies
+requests>=2.31.0
+scikit-image>=0.21.0
+reportlab>=4.0.0

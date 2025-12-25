@@ -1,0 +1,1 @@
+"""Abandoned Homes Prediction API."""
